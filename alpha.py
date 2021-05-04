@@ -183,7 +183,10 @@ def get_noisy_circle():
     return X
 
 if __name__ == '__main__':
-    X = load_pointcloud("snowman.png")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('png', help='PNG of point cloud')
+    args = parser.parse_args()
+    X = load_pointcloud(args.png)
     # If scales left empty, will choose 100 automatically
     # based on persistence diagrams
     scales = np.array([]) 
