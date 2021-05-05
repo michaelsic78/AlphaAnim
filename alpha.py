@@ -184,7 +184,7 @@ def get_noisy_circle():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('png', help='PNG of point cloud')
+    parser.add_argument('--png', help='PNG of point cloud')
     args = parser.parse_args()
     X = load_pointcloud(args.png)
     # If scales left empty, will choose 100 automatically
