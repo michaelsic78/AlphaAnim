@@ -9,10 +9,65 @@ from skimage import filters
 from scipy import spatial
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
+from instruments import * 
 
 from persim import plot_diagrams
 import gudhi
 
+
+def set_sound(event,mem):
+    """
+    Sets which sound to be played for a specific event as requested by user 
+    
+    Parameters
+    ----------
+    event: String
+        Type of event (triangle being added for example)
+    Mem: List
+        Used only if a sound was not specified by the user for this event. Mem olds which sounds have already been chosen and chooses a different one for this event. Will start repeating if program runs out of sounds (which would only happen if more events were added but robustness is important :) )
+        
+    Returns
+    -------
+    ret: Method name for sound. 
+    mem: Used for next event 
+    """
+    
+    sound_list = {'karplus': karplus_strong_note,'plucked':fm_plucked_string_note,'bell':fm_bell_note,'brass':fm_brass_note,'drum','dirty':fm_dirty_bass_note,'wood':fm_wood_drum_sound}
+    
+    
+    if len(event) == 0:
+        k = True
+        #so sorry about this lil section 
+        while k:
+            for sound in sound_list.keys():
+                if sound not in mem:
+                    ret = sound_list[sound]
+                    mem.append(sound)
+                    k = False     
+    else: 
+        mem.append(event)
+        ret = sound_list[event]
+
+    return ret,mem
+
+def make_sound_array(triangle_sound='',edge_sound='',death_sound=''):
+    pass
+    
+
+
+
+def sound_pack(filtration,dgmsalpha):
+    for tup in filtration:
+        event_type = tup[0]
+        alpha = tup[1]
+        if len(tup[0]) > 2: 
+            pass
+            #add triangle sound at alpha value
+        elif len(tup[0]) == 2:
+            pass
+            #add edge sound at alpha value
+    
+        
 
 def gudhi2persim(pers):
     """
@@ -104,6 +159,7 @@ def draw_alpha(X, filtration, alpha, draw_balls=True, draw_voronoi_edges=True):
     plt.scatter(X[:, 0], X[:, 1], zorder=0)
     plt.xlim(xlims[0], xlims[1])
     plt.ylim(ylims[0], ylims[1])
+    
     #plt.axis('equal')
 
 
@@ -126,6 +182,7 @@ def alpha_animation(X, scales=np.array([])):
     filtration = [(f[0], np.sqrt(f[1])) for f in simplex_tree.get_filtration()]
     diag = simplex_tree.persistence()
     dgmsalpha = gudhi2persim(diag)[0:2]
+    
     if scales.size == 0:
         # Choose some default scales based on persistence
         smin = min(np.min(dgmsalpha[0]), np.min(dgmsalpha[1]))
