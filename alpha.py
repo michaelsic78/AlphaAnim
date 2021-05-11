@@ -46,11 +46,13 @@ def set_sound(event,mem):
     if len(event) == 0:
 
         #so sorry about this lil section 
-        
+       
+        #loop over sounds until the program finds one that has not been used yet
         for sound in sound_dict.keys():
             if sound not in mem:
                 ret = sound_dict[sound]
-                mem.append(sound)  
+                mem.append(sound)
+                break
     else: 
         mem.append(event)
         ret = sound_list[event]
@@ -68,13 +70,13 @@ def make_audio_array(filtration,dgmsalpha,triangle_sound='',edge_sound='',birth_
     birth_sound,mem = set_sound(birth_sound,mem)
     death_sound,mem = set_sound(death_sound,mem)
     
-
+    
     for i in filtration:
         event_type = i[0]
         alpha = i[1]
-        if len(i[0]) > 2: 
+        if len(event) > 2: 
             audio[int(alpha)] = triangle_sound()
-        elif len(i[0]) == 2:
+        elif len(event) == 2:
             audio[int(alpha)] = edge_sound()
         
         
