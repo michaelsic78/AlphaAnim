@@ -68,18 +68,15 @@ def make_audio_array(filtration,dgmsalpha,triangle_sound='',edge_sound='',birth_
     birth_sound,mem = set_sound(birth_sound,mem)
     death_sound,mem = set_sound(death_sound,mem)
     
-    
-    
-    for i in range(len(filtration)):
-        event_type = i[0][0]
-        print(event_type)
+
+    for i in filtration:
+        event_type = i[0]
         alpha = i[1]
         if len(i[0]) > 2: 
-            pass
+            audio[int(alpha)] = triangle_sound()
         elif len(i[0]) == 2:
-            pass
-            #add edge sound at alpha value
-    
+            audio[int(alpha)] = edge_sound()
+        
         
 
 def gudhi2persim(pers):
@@ -176,7 +173,7 @@ def draw_alpha(X, filtration, alpha, draw_balls=True, draw_voronoi_edges=True):
     #plt.axis('equal')
 
 
-def alpha_animation(X, triangle_sound,edge_sound,birth_sound,death_sound,scales=np.array([])):
+def alpha_animation(X, triangle_sound,edge_sound,birth_sound,death_sound,scales):
     """
     Create an animation of an alpha filtration of a 2D point cloud
     with the point cloud on the left and a plot on the right
@@ -190,6 +187,7 @@ def alpha_animation(X, triangle_sound,edge_sound,birth_sound,death_sound,scales=
         the program will choose 100 uniformly spaced scales between
         the minimum and maximum events in birth/death
     """
+  
     alpha_complex = gudhi.AlphaComplex(points=X)
     simplex_tree = alpha_complex.create_simplex_tree()
     filtration = [(f[0], np.sqrt(f[1])) for f in simplex_tree.get_filtration()]
@@ -254,7 +252,7 @@ def get_noisy_circle():
     X += 0.2*np.random.randn(X.shape[0], 2)
     return X
 
-def run_alpha(png,scales,triangle_sound='',edge_sound='',birth_sound ='' ,death_sound=''):
+def run_alpha(png,scales=np.array([]),triangle_sound='',edge_sound='',birth_sound ='' ,death_sound=''):
     X = load_pointcloud(png)
     for event in [triangle_sound,edge_sound,birth_sound,death_sound]:
         if len(event) != 0:
@@ -264,7 +262,6 @@ def run_alpha(png,scales,triangle_sound='',edge_sound='',birth_sound ='' ,death_
                 
     # If scales left empty, will choose 100 automatically
     # based on persistence diagrams
-    scales = np.array([]) 
-    scales = np.linspace(3, 18, 500) # Choose custom scales
-    print('here')
+   
+   # scales = np.linspace(3, 18, 500) # Choose custom scales
     alpha_animation(X,triangle_sound,edge_sound,birth_sound,death_sound,scales)
