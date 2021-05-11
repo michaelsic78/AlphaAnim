@@ -72,7 +72,7 @@ def make_audio_array(filtration,dgmsalpha,triangle_sound='',edge_sound='',birth_
     
     
     for i in filtration:
-        event_type = i[0]
+        event = i[0]
         alpha = i[1]
         if len(event) > 2: 
             audio[int(alpha)] = triangle_sound()
@@ -196,7 +196,7 @@ def alpha_animation(X, triangle_sound,edge_sound,birth_sound,death_sound,scales)
     diag = simplex_tree.persistence()
     dgmsalpha = gudhi2persim(diag)[0:2]
     
-    make_audio_array(filtration,dgmsalpha[1],triangle_sound,edge_sound,birth_sound,death_sound)
+  #  make_audio_array(filtration,dgmsalpha[1],triangle_sound,edge_sound,birth_sound,death_sound)
     
     if scales.size == 0:
         # Choose some default scales based on persistence
@@ -240,8 +240,8 @@ def load_pointcloud(path):
     I = imread(path)
     I = np.mean(I, axis=2)
     X, Y = np.meshgrid(np.arange(I.shape[1]), np.arange(I.shape[1]))
-    x = X[I == 0]
-    y = I.shape[0]-Y[I == 0]
+    x = X[I < 255]
+    y = I.shape[0]-Y[I < 255]
     return np.array([x, y]).T
 
 def get_noisy_circle():
