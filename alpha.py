@@ -15,6 +15,12 @@ from persim import plot_diagrams
 import gudhi
 
 
+def get_sound_dict():
+    
+    dictionary = dict({'karplus': karplus_strong_note,'plucked':fm_plucked_string_note,'bell':fm_bell_note,'brass':fm_brass_note,'drum':fm_drum_sound,'dirty':fm_dirty_bass_note,'wood':fm_wood_drum_sound})
+    
+    return dictionary
+
 def set_sound(event,mem):
     """
     Sets which sound to be played for a specific event as requested by user 
@@ -32,31 +38,41 @@ def set_sound(event,mem):
     mem: Used for next event 
     """
     
-    sound_list = {'karplus': karplus_strong_note,'plucked':fm_plucked_string_note,'bell':fm_bell_note,'brass':fm_brass_note,'drum','dirty':fm_dirty_bass_note,'wood':fm_wood_drum_sound}
+    sound_dict = get_sound_dict()
+    
+    ret = ''
     
     
     if len(event) == 0:
         k = True
         #so sorry about this lil section 
-        while k:
-            for sound in sound_list.keys():
-                if sound not in mem:
-                    ret = sound_list[sound]
-                    mem.append(sound)
-                    k = False     
+        
+        for sound in sound_dict.keys():
+            if sound not in mem:
+                ret = sound_dict[sound]
+                mem.append(sound)
+                k = False     
     else: 
         mem.append(event)
         ret = sound_list[event]
 
     return ret,mem
 
-def make_sound_array(triangle_sound='',edge_sound='',death_sound=''):
-    pass
+def make_audio_array(filtration,dgmsalpha,triangle_sound='',edge_sound='',birth_sound ='',death_sound=''):
     
-
-
-
-def sound_pack(filtration,dgmsalpha):
+   # audio = np.array()
+    mem = []
+    #set which sound to play for each event
+    print('making audio....')
+    triangle_sound,mem = set_sound(triangle_sound,mem)
+    edge_sound,mem = set_sound(edge_sound,mem)
+    birth_sound,mem = set_sound(birth_sound,mem)
+    death_sound,mem = set_sound(death_sound,mem)
+    
+    print('audio made')
+    
+    
+    
     for tup in filtration:
         event_type = tup[0]
         alpha = tup[1]
@@ -163,7 +179,7 @@ def draw_alpha(X, filtration, alpha, draw_balls=True, draw_voronoi_edges=True):
     #plt.axis('equal')
 
 
-def alpha_animation(X, scales=np.array([])):
+def alpha_animation(X, triangle_sound,edge_sound,birth_sound,death_sound,scales=np.array([])):
     """
     Create an animation of an alpha filtration of a 2D point cloud
     with the point cloud on the left and a plot on the right
@@ -182,6 +198,8 @@ def alpha_animation(X, scales=np.array([])):
     filtration = [(f[0], np.sqrt(f[1])) for f in simplex_tree.get_filtration()]
     diag = simplex_tree.persistence()
     dgmsalpha = gudhi2persim(diag)[0:2]
+    
+    make_audio_array(filtration,dgmsalpha[1],triangle_sound,edge_sound,birth_sound,death_sound)
     
     if scales.size == 0:
         # Choose some default scales based on persistence
@@ -239,10 +257,17 @@ def get_noisy_circle():
     X += 0.2*np.random.randn(X.shape[0], 2)
     return X
 
-def run_alpha(png,scales):
+def run_alpha(png,scales,triangle_sound='',edge_sound='',birth_sound ='' ,death_sound=''):
     X = load_pointcloud(png)
+    for event in [triangle_sound,edge_sound,birth_sound,death_sound]:
+        if len(event) != 0:
+            sound_dict = get_sound_dict()
+            if event not in sound_dict.keys():
+                raise Exception(f'Sorry {event} is not a supported sound....yet :)')
+                
     # If scales left empty, will choose 100 automatically
     # based on persistence diagrams
     scales = np.array([]) 
-    #scales = np.linspace(3, 18, 500) # Choose custom scales
-    alpha_animation(X, scales)
+    scales = np.linspace(3, 18, 500) # Choose custom scales
+    print('here')
+    alpha_animation(X,triangle_sound,edge_sound,birth_sound,death_sound,scales)
