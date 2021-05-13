@@ -9,15 +9,38 @@ from skimage import filters
 from scipy import spatial
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
+import IPython.display as ipd
 from instruments import * 
 
 from persim import plot_diagrams
 import gudhi
 
-
+def print_user_guide():
+    
+    print('Welcome to the Alpha Animation with Sound python program!')
+    current_sounds = get_sound_dict().keys()
+    print()
+    print('The current supported sounds are the following')
+    print('----------------------------------------------')
+    sounds = get_sound_dict()
+    for sound in sounds.keys():
+        print(sound)
+    print()
+    print('You can add sound to the following events: the addition of an edge, the creation of a triangle, and the birth and death of topological events')
+    print('You should also specificy what you FPS you intend to make the final animation so the audio lines up. The default is 30 frames per second.')
+    print('Start the program by calling the run_alpha() method. Make sure to specificy the png of your point cloud. You can add sounds through this method as well')
+    print()
+    print('See an example run below')
+    print('------------------------')
+    print('run_alpha(png="snowman.png",fps=30,triangle_sound="brass",edge_sound="dirty bass",birth_sound="wood",death_sound="bell")')
+    print()
+    print('You can also specify the number of frames in the final product with the scales argument')
+    print('Also note that is not required to specify all sounds (or any sounds). If one or any sounds are not declared, the program will pick which sounds to use for each event.')
+    
+    
 def get_sound_dict():
     
-    dictionary = dict({'karplus': karplus_strong_note,'plucked':fm_plucked_string_note,'bell':fm_bell_note,'brass':fm_brass_note,'drum':fm_drum_sound,'dirty':fm_dirty_bass_note,'wood':fm_wood_drum_sound})
+    dictionary = dict({'karplus': karplus_strong_note,'plucked string':fm_plucked_string_note,'bell':fm_bell_note,'brass':fm_brass_note,'drum':fm_drum_sound,'dirty bass':fm_dirty_bass_note,'wood':fm_wood_drum_sound})
     
     return dictionary
 
@@ -55,32 +78,97 @@ def set_sound(event,mem):
                 break
     else: 
         mem.append(event)
-        ret = sound_list[event]
+        ret = sound_dict[event]
 
     return ret,mem
 
-def make_audio_array(filtration,dgmsalpha,triangle_sound='',edge_sound='',birth_sound ='',death_sound=''):
+def make_audio_array(scales,filtration,dgmsalpha,fps=30,triangle_sound='',edge_sound='',birth_sound ='',death_sound=''):
+    """ 
+    Make the audio array for the animation 
     
-    audio = np.zeros_like(filtration)
+    Parameters
+    ----------
+    
+    scales: NP ARRAY, Scales to use in each frame of the animation.
+    filtration: NP ARRAY, edges and triangles and the alphas at which they are added
+    dgmsalpha: NP ARRAY, birth and death alphas for topological events 
+    fps: int, frames per second the animation is run at 
+    triangle_sound: String, type of sound to play when a triangle is added
+    edge_sound: String, type of sound to play when an edge is added 
+    birth_sound: String, type of sound to play when a topoligical event is born 
+    death_sound: String, type of sound to play when a topoligical event dies (rip)
+     
+    Returns
+    -------
+    
+    audio: NP ARRAY. array to be converted to audio. 
+    sr: INT, sample rate to play audio at
+    """
+    max_alpha = max(scales)
+    filtration = np.array(filtration)
+    dgmsalpha = np.array(dgmsalpha)
+    
+    #cut out anything above the maximum alpha value in the animation
+    filtration = filtration[np.where(filtration[:,1] <= max_alpha)]
+  #  dgmsalpha = dgmsalpha[np.where(dgmsalpha[0,:] <= max_alpha)]
+  #  dgmsalpha = dgmsalpha[np.where(dgmsalpha[:,1] <= max_alpha)]
+    
+    
+    N = len(filtration) + len(dgmsalpha)
+    scale = len(scales)
+    audio = np.zeros(N*scale)
     mem = []
+    
     #set which sound to play for each event
-    print('making audio....')
     triangle_sound,mem = set_sound(triangle_sound,mem)
     edge_sound,mem = set_sound(edge_sound,mem)
     birth_sound,mem = set_sound(birth_sound,mem)
     death_sound,mem = set_sound(death_sound,mem)
+   
+    
+    sr = round((200*scale)*fps/scale)
+    #compensate for the number of the frames
     
     
+    frame_comp = fps * scale
+    
+    rate = sr
+    dur = 1
+    samples = len(audio)
+    
+    
+    for i in dgmsalpha:
+        birth = i[0]
+        death = i[1]
+        d = {'birth':birth,'death':death}
+        for event,alpha in d.items():
+        
+              #start = int(round(scale/alpha+(alpha/max_alpha)*samples))
+              #keeping this in just so you can see how wrong i was at first HAHHAHAHA 
+        
+        
+            start = int(round((alpha/max_alpha)*samples))
+            end = int(round(sr+start))
+            if end < samples:
+                if event ==  'birth':
+                    audio[start:end] = birth_sound(sr=rate,duration=dur)                
+                elif event == 'death':
+                    audio[start:end] = death_sound(sr=rate,duration=dur)
+                
+    print(scale)
     for i in filtration:
         event = i[0]
         alpha = i[1]
-        if len(event) > 2: 
-            audio[int(alpha)] = triangle_sound()
-        elif len(event) == 2:
-            audio[int(alpha)] = edge_sound()
+        start = int(round((alpha/max_alpha)*samples))
+        end = int(round(sr+start))
+        if end < samples:
+            if len(event) > 2: 
+                audio[start:end] = triangle_sound(sr=rate,duration=dur)           
+            elif len(event) == 2:
+                audio[start:end] = edge_sound(sr=rate,duration=dur)  
+            
+    return audio,sr
         
-        
-
 def gudhi2persim(pers):
     """
     Convert a persistence diagram from GUDHI's format into
@@ -175,7 +263,7 @@ def draw_alpha(X, filtration, alpha, draw_balls=True, draw_voronoi_edges=True):
     #plt.axis('equal')
 
 
-def alpha_animation(X, triangle_sound,edge_sound,birth_sound,death_sound,scales):
+def alpha_animation(X, fps,triangle_sound,edge_sound,birth_sound,death_sound,scales):
     """
     Create an animation of an alpha filtration of a 2D point cloud
     with the point cloud on the left and a plot on the right
@@ -196,7 +284,6 @@ def alpha_animation(X, triangle_sound,edge_sound,birth_sound,death_sound,scales)
     diag = simplex_tree.persistence()
     dgmsalpha = gudhi2persim(diag)[0:2]
     
-  #  make_audio_array(filtration,dgmsalpha[1],triangle_sound,edge_sound,birth_sound,death_sound)
     
     if scales.size == 0:
         # Choose some default scales based on persistence
@@ -207,20 +294,23 @@ def alpha_animation(X, triangle_sound,edge_sound,birth_sound,death_sound,scales)
         smax += 0.05*rg
         scales = np.linspace(smin, smax, 100)
 
-    plt.figure(figsize=(12, 6))
-    for frame, alpha in enumerate(scales):
-        plt.clf()
-        plt.subplot(121)
-        draw_alpha(X, filtration, alpha, True)
-        plt.title("$\\alpha = {:.3f}$".format(alpha))
-        plt.subplot(122)
-        plot_diagrams(dgmsalpha)
-        plt.plot([-0.01, alpha], [alpha, alpha], 'gray', linestyle='--', linewidth=1, zorder=0)
-        plt.plot([alpha, alpha], [alpha, 1.0], 'gray', linestyle='--', linewidth=1, zorder=0)
-        plt.text(alpha+0.01, alpha-0.01, "{:.3f}".format(alpha))
-        plt.title("Persistence Diagram")
-        plt.savefig("{}.png".format(frame), bbox_inches='tight')
+    audio =  make_audio_array(scales,filtration,dgmsalpha[1],fps,triangle_sound,edge_sound,birth_sound,death_sound)
+ #   plt.figure(figsize=(12, 6))
+#    for frame, alpha in enumerate(scales):
+ #       plt.clf()
+  #      plt.subplot(121)
+   #     draw_alpha(X, filtration, alpha, True)
+    #    plt.title("$\\alpha = {:.3f}$".format(alpha))
+     #   plt.subplot(122)
+      #  plot_diagrams(dgmsalpha)
+       # plt.plot([-0.01, alpha], [alpha, alpha], 'gray', linestyle='--', linewidth=1, zorder=0)
+       # plt.plot([alpha, alpha], [alpha, 1.0], 'gray', linestyle='--', linewidth=1, zorder=0)
+      #  plt.text(alpha+0.01, alpha-0.01, "{:.3f}".format(alpha))
+     #   plt.title("Persistence Diagram")
+    #    plt.savefig("{}.png".format(frame), bbox_inches='tight')
 
+
+    return audio
 def load_pointcloud(path):
     """
     Load a point cloud from an image.  Every black pixel
@@ -241,7 +331,7 @@ def load_pointcloud(path):
     I = np.mean(I, axis=2)
     X, Y = np.meshgrid(np.arange(I.shape[1]), np.arange(I.shape[1]))
     x = X[I < 255]
-    y = I.shape[0]-Y[I < 255]
+    y = I.shape[0]-Y[I <255]
     return np.array([x, y]).T
 
 def get_noisy_circle():
@@ -254,16 +344,19 @@ def get_noisy_circle():
     X += 0.2*np.random.randn(X.shape[0], 2)
     return X
 
-def run_alpha(png,scales=np.array([]),triangle_sound='',edge_sound='',birth_sound ='' ,death_sound=''):
+def run_alpha(png,scales=np.array([]),fps=30,triangle_sound='',edge_sound='',birth_sound ='' ,death_sound=''):
     X = load_pointcloud(png)
+    
+    #check if supported sound type
     for event in [triangle_sound,edge_sound,birth_sound,death_sound]:
         if len(event) != 0:
             sound_dict = get_sound_dict()
             if event not in sound_dict.keys():
-                raise Exception(f'Sorry {event} is not a supported sound....yet :)')
+                    raise Exception(f'Sorry {event} is not a supported sound....yet :)')
                 
     # If scales left empty, will choose 100 automatically
     # based on persistence diagrams
    
    # scales = np.linspace(3, 18, 500) # Choose custom scales
-    alpha_animation(X,triangle_sound,edge_sound,birth_sound,death_sound,scales)
+    audio,sr = alpha_animation(X,fps,triangle_sound,edge_sound,birth_sound,death_sound,scales)
+    return audio,sr

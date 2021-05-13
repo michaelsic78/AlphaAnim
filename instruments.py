@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def karplus_strong_note(sr=44100, note=14, duration=1, decay=.98):
+def karplus_strong_note(sr=44100, note=14, duration=.01, decay=.98):
     """
     Parameters
     ----------
@@ -29,7 +29,7 @@ def karplus_strong_note(sr=44100, note=14, duration=1, decay=.98):
         y[i] = decay * ((y[i-T]+y[i-T+1])/2)
     return y
 
-def fm_synth_note(sr=44100, note=14, duration=1, ratio = 2, I = 2, 
+def fm_synth_note(sr=44100, note=14, duration=.01, ratio = 2, I = 2, 
                   envelope = lambda N, sr: np.ones(N),
                   amplitude = lambda N, sr: np.ones(N)):
     """
@@ -189,7 +189,7 @@ def dirty_bass_env(N, sr):
         envelope[int(N/2)+i] = 1 - (i**-time)      
     return envelope
 
-def fm_plucked_string_note(sr=44100, note=14, duration=1, lam = 3):
+def fm_plucked_string_note(sr=44100, note=14, duration=.01, lam = 3):
     """
     Make a plucked string of a particular length
     using FM synthesis
@@ -214,7 +214,7 @@ def fm_plucked_string_note(sr=44100, note=14, duration=1, lam = 3):
                 amplitude = envelope)
 
 
-def fm_brass_note(sr=44100, note=14, duration=1):
+def fm_brass_note(sr=44100, note=14, duration=.01):
     """
     Make a brass note of a particular length
     Parameters
@@ -236,7 +236,7 @@ def fm_brass_note(sr=44100, note=14, duration=1):
                 amplitude = envelope)
 
 
-def fm_bell_note(sr=44100, note=14, duration = 1,lam=.8):
+def fm_bell_note(sr=44100, note=14, duration = .01,lam=.8):
     """
     Make a bell note of a particular length
     Parameters
@@ -259,7 +259,7 @@ def fm_bell_note(sr=44100, note=14, duration = 1,lam=.8):
                 amplitude = envelope) 
 
 
-def fm_drum_sound(sr=4410, note=14, duration=1, fixed_note = -14):
+def fm_drum_sound(sr=4410, note=14, duration=.01, fixed_note = -14):
     """
     Make what Chowning calls a "drum-like sound"
     Parameters
@@ -283,7 +283,7 @@ def fm_drum_sound(sr=4410, note=14, duration=1, fixed_note = -14):
                 ratio = 1.4, I = 2, envelope = envelope,
                 amplitude = envelope)
 
-def fm_wood_drum_sound(sr=44100, note=14, duration=1, fixed_note = -14):
+def fm_wood_drum_sound(sr=44100, note=14, duration=.01, fixed_note = -14):
     """
     Make what Chowning calls a "wood drum sound"
     Parameters
@@ -307,7 +307,7 @@ def fm_wood_drum_sound(sr=44100, note=14, duration=1, fixed_note = -14):
                 ratio = 1.4, I = 10, envelope = envelope,
                 amplitude = envelope) 
 
-def fm_dirty_bass_note(sr=44100, note=14, duration=1):
+def fm_dirty_bass_note(sr=44100, note=14, duration=.01):
     """
     Make a "dirty bass" note, based on 
     https://www.attackmagazine.com/technique/tutorials/dirty-fm-bass/
